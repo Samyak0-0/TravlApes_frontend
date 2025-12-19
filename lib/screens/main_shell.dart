@@ -4,20 +4,28 @@ import 'trips_screen.dart';
 import 'favourites_screen.dart';
 
 class MainShell extends StatefulWidget {
-  MainShell({super.key});
+  final int initialIndex;
+
+  MainShell({super.key, this.initialIndex = 0});
 
   @override
   State<MainShell> createState() => _MainShellState();
 }
 
 class _MainShellState extends State<MainShell> {
-  int currentIndex = 0;
+  late int currentIndex;
 
   final List<Widget> screens = const [
     HomeScreen(),
     TripsScreen(),
     FavouritesScreen(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    currentIndex = widget.initialIndex;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -38,15 +46,15 @@ class _MainShellState extends State<MainShell> {
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home_outlined),
-            label: 'Home',
+            label: "Home",
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.map_outlined),
-            label: 'Trips',
+            label: "Trips",
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.favorite_border),
-            label: 'Favourites',
+            label: "Favourites",
           ),
         ],
       ),

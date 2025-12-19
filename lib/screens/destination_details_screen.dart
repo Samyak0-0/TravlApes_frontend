@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'plan_trip_screen.dart';
 
 class DestinationDetailsScreen extends StatelessWidget {
   final String title;
@@ -14,7 +15,7 @@ class DestinationDetailsScreen extends StatelessWidget {
       body: Column(
         children: [
           _topSection(context),
-          Expanded(child: _detailsSection()),
+          Expanded(child: _detailsSection(context)),
         ],
       ),
     );
@@ -76,7 +77,7 @@ class DestinationDetailsScreen extends StatelessWidget {
   }
 
   // 🔹 Main Details Section
-  Widget _detailsSection() {
+  Widget _detailsSection(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -103,13 +104,13 @@ class DestinationDetailsScreen extends StatelessWidget {
 
           const Spacer(),
 
-          _bottomButton(),
+          _bottomButtons(context),
         ],
       ),
     );
   }
 
-  // 🔹 Info Boxes (Distance, Price, Time)
+  // 🔹 Info Boxes (Distance, Time, Price)
   Widget _infoBoxes() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -121,24 +122,54 @@ class DestinationDetailsScreen extends StatelessWidget {
     );
   }
 
-  // 🔹 Bottom Action Button
-  Widget _bottomButton() {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.green.shade700,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+  // 🔹 Bottom Action Buttons
+  Widget _bottomButtons(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: OutlinedButton.icon(
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("Added to favourites")),
+              );
+            },
+            icon: const Icon(Icons.favorite_border),
+            label: const Text("Favourite"),
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
           ),
         ),
-        onPressed: () {},
-        child: const Text(
-          "Add to Trip / Favourite",
-          style: TextStyle(fontSize: 16),
+        const SizedBox(width: 12),
+        Expanded(
+          child: ElevatedButton.icon(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => PlanTripScreen(
+                    destination: title,
+                  ),
+                ),
+              );
+            },
+
+
+            icon: const Icon(Icons.navigation),
+            label: const Text("Plan Trip"),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+          ),
         ),
-      ),
+      ],
     );
   }
 }

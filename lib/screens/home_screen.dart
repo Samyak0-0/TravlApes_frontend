@@ -20,7 +20,7 @@ class HomeScreen extends StatelessWidget {
             const SizedBox(height: 30),
             _sectionTitle("Top Destinations"),
             const SizedBox(height: 12),
-            _topDestinationBoxes(),
+            _topDestinationBoxes(context),
           ],
         ),
       ),
@@ -125,15 +125,44 @@ class HomeScreen extends StatelessWidget {
   }
 
   // 🔹 Top Destination Boxes
-  Widget _topDestinationBoxes() {
+  Widget _topDestinationBoxes(BuildContext context) {
     return Row(
       children: [
-        _smallBox("Place 1"),
+        Expanded(
+          child: GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const DestinationDetailsScreen(
+                    title: "Place 1",
+                  ),
+                ),
+              );
+            },
+            child: _smallBox("Place 1"),
+          ),
+        ),
         const SizedBox(width: 12),
-        _smallBox("Place 2"),
+        Expanded(
+          child: GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const DestinationDetailsScreen(
+                    title: "Place 2",
+                  ),
+                ),
+              );
+            },
+            child: _smallBox("Place 2"),
+          ),
+        ),
       ],
     );
   }
+
 
   Widget _smallBox(String title) {
     return Expanded(
