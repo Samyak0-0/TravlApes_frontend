@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'screens/main_shell.dart';
+import 'store/trip_store.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await TripStore().loadTrips(); // 👈 LOAD SAVED TRIPS
   runApp(const MyApp());
 }
 
@@ -12,7 +15,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: MainShell(), // ✅ REMOVE const
+      home: MainShell(),
     );
   }
 }
