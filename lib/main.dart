@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:paryatan_mantralaya_f/screens/loginsignup.dart';
 import 'screens/main_shell.dart';
 import 'store/trip_store.dart';
 import 'store/favourite_store.dart';
@@ -12,12 +13,13 @@ void main() async {
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
-
+  
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: MainShell(),
+      // start at the login/signup screen and only proceed to MainShell after auth
+      home: const Loginsignup(),
     );
   }
 }
