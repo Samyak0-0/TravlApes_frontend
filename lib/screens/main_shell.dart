@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'home_screen.dart';
 import 'trips_screen.dart';
 import 'favourites_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'loginsignup.dart';
 
 class MainShell extends StatefulWidget {
   final int initialIndex;
@@ -30,6 +32,38 @@ class _MainShellState extends State<MainShell> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('TravlApes'),
+        actions: [
+          IconButton(
+            tooltip: 'Logout',
+            icon: const Icon(Icons.logout),
+            onPressed: () async {
+              final confirm = await showDialog<bool>(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: const Text('Sign out'),
+                  content: const Text('Are you sure you want to sign out?'),
+                  actions: [
+                    TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
+                    TextButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Sign out')),
+                  ],
+                ),
+              );
+
+              if (confirm != true) return;
+
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.remove('auth_token');
+              await prefs.remove('username');
+
+              if (!mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Signed out')));
+              Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const Loginsignup()));
+            },
+          ),
+        ],
+      ),
       body: IndexedStack(
         index: currentIndex,
         children: screens,
