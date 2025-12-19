@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../store/trip_store.dart';
+import 'route_map_screen.dart';
 
 class PlanningScreen extends StatelessWidget {
   final String destination;
@@ -12,9 +12,7 @@ class PlanningScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Trip Planning"),
-      ),
+      appBar: AppBar(title: const Text("Trip Planning")),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -33,36 +31,34 @@ class PlanningScreen extends StatelessWidget {
             _infoCard("Status", "Planned"),
             _infoCard("Dates", "Not set"),
             _infoCard("Trip Type", "Not specified"),
-            _infoCard("Transport", "Not specified"),
+            _infoCard("Transport", "Car"),
             _infoCard("Budget", "Not specified"),
 
             const Spacer(),
 
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () async {
-                      // ❌ Cancel trip
-                      await TripStore().cancelTrip(destination);
-                      Navigator.pop(context);
-                    },
-                    child: const Text("Cancel Trip"),
+            /// 🧪 TEST MAP BUTTON (NO BACKEND)
+            ElevatedButton.icon(
+              icon: const Icon(Icons.map),
+              label: const Text("Test Map (Hardcoded Route)"),
+              style: ElevatedButton.styleFrom(
+                minimumSize: const Size.fromHeight(48),
+              ),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => RouteMapScreen(
+                      coordinates: const [
+                        [85.3240, 27.7172], // Start (Kathmandu)
+                        [85.3250, 27.6736], // End
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      // ▶ Start trip
-                      await TripStore().startTrip(destination);
-                      Navigator.pop(context);
-                    },
-                    child: const Text("Start Trip"),
-                  ),
-                ),
-              ],
+                );
+              },
             ),
+
+            const SizedBox(height: 12),
           ],
         ),
       ),
@@ -81,14 +77,8 @@ class PlanningScreen extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
-          Text(
-            value,
-            style: const TextStyle(color: Colors.grey),
-          ),
+          Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
+          Text(value, style: const TextStyle(color: Colors.grey)),
         ],
       ),
     );

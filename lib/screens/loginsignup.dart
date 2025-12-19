@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'main_shell.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class Loginsignup extends StatefulWidget {
   const Loginsignup({super.key});
@@ -114,10 +115,21 @@ class _LoginsignupState extends State<Loginsignup> {
           SnackBar(content: Text(message)),
         );
 
+        // Save token if present
+        if (data is Map) {
+          final token = (data['token'] ?? data['access'] ?? data['access_token'] ?? data['auth_token'] ?? data['idToken'])?.toString();
+          if (token != null && token.isNotEmpty) {
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.setString('auth_token', token);
+            // Optionally save username
+            await prefs.setString('username', _usernameCtrl.text.trim());
+          }
+        }
+
         // On success navigate to main shell (replace login route)
         if (!mounted) return;
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) =>  MainShell()),
+          MaterialPageRoute(builder: (_) => MainShell()),
         );
       } else {
         String errorMsg;
