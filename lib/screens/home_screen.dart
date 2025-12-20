@@ -3,6 +3,8 @@ import '../models/destination_model.dart';
 import '../models/location_model.dart';
 import '../services/destination_service.dart';
 import 'destination_details_screen.dart';
+import 'location_details_screen.dart';
+
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -191,11 +193,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
               return GestureDetector(
                 onTap: () {
-                  setState(() {
-                    selectedLocation =
-                        isSelected ? null : location.name;
-                  });
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => LocationDetailsScreen(
+                        location: location,
+                        description:
+                            locationDescriptions[location.name] ?? "",
+                      ),
+                    ),
+                  );
                 },
+
                 child: Container(
                   width: 180, // ⬆ increased width
                   decoration: BoxDecoration(

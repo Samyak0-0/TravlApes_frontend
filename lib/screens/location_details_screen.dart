@@ -1,0 +1,133 @@
+import 'package:flutter/material.dart';
+import '../models/location_model.dart';
+import 'plan_trip_screen.dart';
+
+class LocationDetailsScreen extends StatelessWidget {
+  final LocationItem location;
+  final String description;
+
+  const LocationDetailsScreen({
+    super.key,
+    required this.location,
+    required this.description,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Column(
+        children: [
+          _topSection(context),
+          Expanded(child: _detailsSection(context)),
+        ],
+      ),
+    );
+  }
+
+  // 🔹 TOP IMAGE SECTION
+  Widget _topSection(BuildContext context) {
+    return Stack(
+      children: [
+        Container(
+          height: 300,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: Colors.green.shade300,
+            borderRadius: const BorderRadius.only(
+              bottomLeft: Radius.circular(30),
+              bottomRight: Radius.circular(30),
+            ),
+          ),
+          child: Image.network(
+            location.imageUrl,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) =>
+                Container(color: Colors.green.shade200),
+          ),
+        ),
+
+        Positioned(
+          top: 40,
+          left: 16,
+          child: CircleAvatar(
+            backgroundColor: Colors.white,
+            child: IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: () => Navigator.pop(context),
+            ),
+          ),
+        ),
+
+        Positioned(
+          bottom: 24,
+          left: 16,
+          right: 16,
+          child: Text(
+            location.name,
+            style: const TextStyle(
+              fontSize: 26,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // 🔹 DETAILS + ACTION
+  Widget _detailsSection(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            "About this location",
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 10),
+
+          Text(
+            description,
+            style: const TextStyle(
+              color: Colors.grey,
+              fontSize: 14,
+              height: 1.5,
+            ),
+          ),
+
+          const Spacer(),
+
+          // 🧭 PLAN TRIP BUTTON
+          SizedBox(
+            width: double.infinity,
+            height: 54,
+            child: ElevatedButton.icon(
+              icon: const Icon(Icons.map),
+              label: const Text(
+                "Plan Trip",
+                style: TextStyle(fontSize: 16),
+              ),
+              onPressed: () {
+                _goToPlanTrip(context);
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 🔹 NAVIGATION
+  void _goToPlanTrip(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PlanTripScreen(
+          destination: location.name,
+        ),
+      ),
+    );
+  }
+}

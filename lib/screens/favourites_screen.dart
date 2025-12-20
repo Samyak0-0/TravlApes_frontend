@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../store/favourite_store.dart';
 import '../models/favourite_model.dart';
-import 'destination_details_screen.dart';
+// import 'destination_details_screen.dart';
 
 class FavouritesScreen extends StatelessWidget {
   const FavouritesScreen({super.key});

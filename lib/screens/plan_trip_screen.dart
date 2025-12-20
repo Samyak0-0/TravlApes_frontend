@@ -18,35 +18,19 @@ class _PlanTripScreenState extends State<PlanTripScreen> {
   DateTime? fromDate;
   DateTime? toDate;
 
-  final TextEditingController otherCategoryController =
-      TextEditingController();
   final TextEditingController budgetController = TextEditingController();
 
-  final List<String> tripCategories = [
+  // ✅ BACKEND-COMPATIBLE MOODS ONLY
+  final List<String> moods = [
     "Food",
-    "Hike",
-    "Culture",
-    "Adventure",
-    "Party",
+    "Cultural",
+    "Entertainment",
+    "Peaceful",
+    "Adventurous",
     "Nature",
-    "History",
-    "Wildlife",
-    "Mountain",
-    "Arts",
-    "Festival",
-    "Other",
   ];
 
-  final List<String> transportModes = [
-    "Bus",
-    "Car",
-    "Walk",
-    "Bike",
-    "Cycle",
-  ];
-
-  final Set<String> selectedCategories = {};
-  String? selectedTransport;
+  final Set<String> selectedMoods = {};
 
   @override
   Widget build(BuildContext context) {
@@ -59,12 +43,15 @@ class _PlanTripScreenState extends State<PlanTripScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // 📅 FROM DATE
             _datePicker(
               label: "From Date",
               date: fromDate,
               onTap: () => _pickDate(isFrom: true),
             ),
             const SizedBox(height: 12),
+
+            // 📅 TO DATE
             _datePicker(
               label: "To Date",
               date: toDate,
@@ -72,34 +59,18 @@ class _PlanTripScreenState extends State<PlanTripScreen> {
             ),
 
             const SizedBox(height: 24),
+
+            // 🎯 MOODS
             const Text(
               "What kind of trip do you want?",
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
-            _categoryChips(),
-
-            if (selectedCategories.contains("Other"))
-              Padding(
-                padding: const EdgeInsets.only(top: 12),
-                child: TextField(
-                  controller: otherCategoryController,
-                  decoration: const InputDecoration(
-                    labelText: "Other (please specify)",
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-              ),
+            _moodChips(),
 
             const SizedBox(height: 24),
-            const Text(
-              "Transportation Medium",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            _transportChips(),
 
-            const SizedBox(height: 24),
+            // 💰 BUDGET
             const Text(
               "Budget",
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -115,6 +86,8 @@ class _PlanTripScreenState extends State<PlanTripScreen> {
             ),
 
             const SizedBox(height: 40),
+
+            // ✅ COMPLETE BUTTON
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -138,7 +111,7 @@ class _PlanTripScreenState extends State<PlanTripScreen> {
     );
   }
 
-  // 🔹 Date Picker Widget
+  // 🔹 DATE PICKER
   Widget _datePicker({
     required String label,
     required DateTime? date,
@@ -167,20 +140,20 @@ class _PlanTripScreenState extends State<PlanTripScreen> {
     );
   }
 
-  // 🔹 Category Chips
-  Widget _categoryChips() {
+  // 🔹 MOOD CHIPS
+  Widget _moodChips() {
     return Wrap(
       spacing: 8,
-      children: tripCategories.map((category) {
-        final selected = selectedCategories.contains(category);
+      children: moods.map((mood) {
+        final selected = selectedMoods.contains(mood);
         return ChoiceChip(
-          label: Text(category),
+          label: Text(mood),
           selected: selected,
           onSelected: (_) {
             setState(() {
               selected
-                  ? selectedCategories.remove(category)
-                  : selectedCategories.add(category);
+                  ? selectedMoods.remove(mood)
+                  : selectedMoods.add(mood);
             });
           },
         );
@@ -188,23 +161,7 @@ class _PlanTripScreenState extends State<PlanTripScreen> {
     );
   }
 
-  // 🔹 Transport Chips
-  Widget _transportChips() {
-    return Wrap(
-      spacing: 8,
-      children: transportModes.map((mode) {
-        return ChoiceChip(
-          label: Text(mode),
-          selected: selectedTransport == mode,
-          onSelected: (_) {
-            setState(() => selectedTransport = mode);
-          },
-        );
-      }).toList(),
-    );
-  }
-
-  // 🔹 Pick Date
+  // 🔹 PICK DATE
   Future<void> _pickDate({required bool isFrom}) async {
     final picked = await showDatePicker(
       context: context,
@@ -220,12 +177,11 @@ class _PlanTripScreenState extends State<PlanTripScreen> {
     }
   }
 
-  // 🔹 Complete Action
+  // 🔹 COMPLETE ACTION
   void _completeTrip() {
-    // Save planned trip
+    // (Later: send this to /places/recommend)
     TripStore().addPlannedTrip(widget.destination);
 
-    // Redirect to Trips tab
     Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(
