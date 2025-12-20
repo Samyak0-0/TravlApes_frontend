@@ -4,7 +4,8 @@ import '../models/destination_model.dart';
 import 'planning_screen.dart';
 
 class PlanTripScreen extends StatefulWidget {
-  final String destination;
+  /// ✅ MUST BE Destination (NOT String)
+  final Destination destination;
 
   const PlanTripScreen({
     super.key,
@@ -21,7 +22,7 @@ class _PlanTripScreenState extends State<PlanTripScreen> {
 
   final TextEditingController budgetController = TextEditingController();
 
-  final List<String> moods = [
+  final List<String> moods = const [
     "Food",
     "Cultural",
     "Entertainment",
@@ -41,17 +42,9 @@ class _PlanTripScreenState extends State<PlanTripScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _datePicker(
-              label: "From Date",
-              date: fromDate,
-              onTap: () => _pickDate(isFrom: true),
-            ),
+            _datePicker("From Date", fromDate, () => _pickDate(true)),
             const SizedBox(height: 12),
-            _datePicker(
-              label: "To Date",
-              date: toDate,
-              onTap: () => _pickDate(isFrom: false),
-            ),
+            _datePicker("To Date", toDate, () => _pickDate(false)),
             const SizedBox(height: 24),
 
             const Text(
@@ -67,6 +60,7 @@ class _PlanTripScreenState extends State<PlanTripScreen> {
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
+
             TextField(
               controller: budgetController,
               keyboardType: TextInputType.number,
@@ -81,13 +75,6 @@ class _PlanTripScreenState extends State<PlanTripScreen> {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: _completeTrip,
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  backgroundColor: Colors.green,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
                 child: const Text("Complete"),
               ),
             ),
@@ -101,11 +88,7 @@ class _PlanTripScreenState extends State<PlanTripScreen> {
   // HELPERS
   // --------------------------------------------------
 
-  Widget _datePicker({
-    required String label,
-    required DateTime? date,
-    required VoidCallback onTap,
-  }) {
+  Widget _datePicker(String label, DateTime? date, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -149,7 +132,7 @@ class _PlanTripScreenState extends State<PlanTripScreen> {
     );
   }
 
-  Future<void> _pickDate({required bool isFrom}) async {
+  Future<void> _pickDate(bool isFrom) async {
     final picked = await showDatePicker(
       context: context,
       firstDate: DateTime.now(),
@@ -180,7 +163,7 @@ class _PlanTripScreenState extends State<PlanTripScreen> {
         case 'Nature':
           return Mood.nature;
         default:
-          throw Exception('Unknown mood');
+          return Mood.peaceful;
       }
     }).toList();
   }
@@ -198,6 +181,7 @@ class _PlanTripScreenState extends State<PlanTripScreen> {
 
     final budget = double.tryParse(budgetController.text) ?? 0;
 
+    // ✅ CORRECT: Destination object
     await TripStore().addPlannedTrip(
       destination: widget.destination,
       fromDate: fromDate!,
@@ -206,11 +190,12 @@ class _PlanTripScreenState extends State<PlanTripScreen> {
       budget: budget,
     );
 
+    // 🔁 PlanningScreen still expects String
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
         builder: (_) => PlanningScreen(
-          destination: widget.destination,
+          destination: widget.destination.name,
           fromDate: fromDate!,
           toDate: toDate!,
           moods: _mapMoodsToEnum(),

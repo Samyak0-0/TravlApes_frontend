@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/location_model.dart';
+import '../models/destination_model.dart';
 import 'plan_trip_screen.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
@@ -40,14 +41,13 @@ class LocationDetailsScreen extends StatelessWidget {
             ),
           ),
           child: CachedNetworkImage(
-          imageUrl: location.imageUrl,
-          fit: BoxFit.cover,
-          placeholder: (context, url) =>
-              Container(color: Colors.green.shade200),
-          errorWidget: (context, url, error) =>
-              Container(color: Colors.green.shade200),
-        ),
-
+            imageUrl: location.imageUrl,
+            fit: BoxFit.cover,
+            placeholder: (context, url) =>
+                Container(color: Colors.green.shade200),
+            errorWidget: (context, url, error) =>
+                Container(color: Colors.green.shade200),
+          ),
         ),
 
         Positioned(
@@ -103,7 +103,6 @@ class LocationDetailsScreen extends StatelessWidget {
 
           const Spacer(),
 
-          // 🧭 PLAN TRIP BUTTON
           SizedBox(
             width: double.infinity,
             height: 54,
@@ -113,9 +112,7 @@ class LocationDetailsScreen extends StatelessWidget {
                 "Plan Trip",
                 style: TextStyle(fontSize: 16),
               ),
-              onPressed: () {
-                _goToPlanTrip(context);
-              },
+              onPressed: () => _goToPlanTrip(context),
             ),
           ),
         ],
@@ -123,13 +120,31 @@ class LocationDetailsScreen extends StatelessWidget {
     );
   }
 
-  // 🔹 NAVIGATION
+  // 🔹 NAVIGATION (FIXED & SAFE)
   void _goToPlanTrip(BuildContext context) {
+    /// ✅ Create a MINIMAL Destination from LocationItem
+    final destination = Destination(
+      id: '', // no id available
+      name: location.name,
+      description: description,
+      location: location.name,
+      category: Category.other,
+      avg_price: 0,
+      rating: 0,
+      open_hours: '',
+      latitude: 0,
+      longitude: 0,
+      suitable_season: const [],
+      suitable_weather: const [],
+      compatable_moods: const [],
+      imageUrl: location.imageUrl,
+    );
+
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => PlanTripScreen(
-          destination: location.name,
+          destination: destination,
         ),
       ),
     );
