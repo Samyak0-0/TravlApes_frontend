@@ -84,6 +84,7 @@ class TripsScreen extends StatelessWidget {
                   MaterialPageRoute(
                     builder: (_) => PlanningScreen(
                       destination: trip.destination,
+                      tripId: trip.id,
                     ),
                   ),
                 );
@@ -95,6 +96,7 @@ class TripsScreen extends StatelessWidget {
                   MaterialPageRoute(
                     builder: (_) => OngoingTripScreen(
                       destination: trip.destination,
+                      tripId: trip.id,
                     ),
                   ),
                 );

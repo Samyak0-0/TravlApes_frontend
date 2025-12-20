@@ -7,8 +7,11 @@ import 'route_map_screen.dart';
 
 class PlanningScreen extends StatelessWidget {
   final String destination;
+  final String tripId;
 
-  const PlanningScreen({super.key, required this.destination});
+ 
+
+  const PlanningScreen({super.key, required this.destination, required this.tripId});
 
   @override
   Widget build(BuildContext context) {
@@ -81,7 +84,8 @@ class PlanningScreen extends StatelessWidget {
                   //   endLat: 27.6736, // Destination
                   //   endLon: 85.3250,
                   // );
-                  await TripStore().addOngoingTrip(destination);
+                  // Use trip id to change status from planned -> ongoing
+                  await TripStore().startTrip(tripId);
 
                   if (!context.mounted) return;
 
@@ -89,8 +93,10 @@ class PlanningScreen extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) =>
-                          OngoingTripScreen(destination: destination),
+                      builder: (_) => OngoingTripScreen(
+                        tripId: tripId,
+                        destination: destination,
+                      ),
                     ),
                   );
                 } catch (e) {
