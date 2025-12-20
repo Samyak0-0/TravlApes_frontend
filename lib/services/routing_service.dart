@@ -1,36 +1,36 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
-class RoutingService {
-  static const String baseUrl = 'http://10.0.2.2:8000';
+class RouteService {
+  // 👇 Use your PC IP address
+  static const String baseUrl = "http://10.10.254.254:8000";
 
-  static Future<List<List<double>>> getRoute({
+  static Future<List<List<double>>> fetchRoute({
     required double startLat,
     required double startLon,
     required double endLat,
     required double endLon,
-    String profile = 'car',
+    String profile = "car",
   }) async {
     final uri = Uri.parse(
-      '$baseUrl/route'
-      '?profile=$profile'
-      '&start_lat=$startLat'
-      '&start_lon=$startLon'
-      '&end_lat=$endLat'
-      '&end_lon=$endLon',
+      "$baseUrl/route/"
+      "?profile=$profile"
+      "&start_lat=$startLat"
+      "&start_lon=$startLon"
+      "&end_lat=$endLat"
+      "&end_lon=$endLon",
     );
 
     final response = await http.get(uri);
 
     if (response.statusCode != 200) {
-      throw Exception(
-        'Backend error ${response.statusCode}: ${response.body}',
-      );
+      throw Exception("Failed to load route");
     }
 
     final data = jsonDecode(response.body);
     return List<List<double>>.from(
-      data['geometry']['coordinates'],
+      data["coordinates"].map((c) => List<double>.from(c)),
     );
   }
 }
+

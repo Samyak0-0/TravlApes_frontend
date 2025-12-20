@@ -1,8 +1,45 @@
 import 'package:flutter/material.dart';
+import '../models/destination_model.dart';
+import '../services/destination_service.dart';
 import 'destination_details_screen.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  final DestinationService _service = DestinationService();
+  List<Destination> destinations = [];
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDestinations();
+  }
+
+  Future<void> _loadDestinations() async {
+    try {
+      final data = await _service.fetchDestinations();
+
+      // 🔎 DEBUG (remove later)
+      debugPrint("DESTINATIONS LOADED: ${data.length}");
+      for (var d in data) {
+        debugPrint("${d.name} → ${d.description}");
+      }
+
+      setState(() {
+        destinations = data;
+        isLoading = false;
+      });
+    } catch (e) {
+      debugPrint("ERROR FETCHING DESTINATIONS: $e");
+      setState(() => isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +64,7 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  // 🔹 Discover Header
+  // 🔹 Header
   Widget _header() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -41,7 +78,7 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  // 🔹 Categories
+  // 🔹 Categories (static for now)
   Widget _categories() {
     final categories = ["Mountain", "Jungle", "Water", "Beach"];
 
@@ -64,22 +101,29 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  // 🔹 Featured Placeholder Boxes
+  // 🔹 Featured (Top 2 destinations)
   Widget _featuredBoxes(BuildContext context) {
+    if (isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    final featured = destinations.take(2).toList();
+
     return SizedBox(
       height: 260,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        itemCount: 2,
+        itemCount: featured.length,
         separatorBuilder: (_, __) => const SizedBox(width: 16),
         itemBuilder: (context, index) {
+          final dest = featured[index];
           return GestureDetector(
             onTap: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (_) => DestinationDetailsScreen(
-                    title: index == 0 ? "Ghandruk" : "Destination B",
+                    title: dest.name,
                   ),
                 ),
               );
@@ -100,7 +144,7 @@ class HomeScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    index == 0 ? "Ghandruk" : "Destination B",
+                    dest.name,
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ),
@@ -112,8 +156,7 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-
-  // 🔹 Section Title
+  // 🔹 Section title
   Widget _sectionTitle(String title) {
     return Text(
       title,
@@ -124,69 +167,97 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  // 🔹 Top Destination Boxes
+  // 🔹 Top destinations list (NAME + DESCRIPTION FIXED)
   Widget _topDestinationBoxes(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const DestinationDetailsScreen(
-                    title: "Place 1",
-                  ),
-                ),
-              );
-            },
-            child: _smallBox("Place 1"),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const DestinationDetailsScreen(
-                    title: "Place 2",
-                  ),
-                ),
-              );
-            },
-            child: _smallBox("Place 2"),
-          ),
-        ),
-      ],
-    );
-  }
+    if (isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
+    if (destinations.isEmpty) {
+      return const Text("No destinations available");
+    }
 
-  Widget _smallBox(String title) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.green.shade50,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 50,
-              height: 50,
-              decoration: BoxDecoration(
-                color: Colors.green.shade200,
-                borderRadius: BorderRadius.circular(10),
+    // ❌ Categories to exclude
+    final excludedCategories = [
+      'restaurant',
+      'food',
+      'accomodations',
+    ];
+
+    // ✅ Filter + sort
+    final topDestinations = destinations
+        .where((dest) =>
+            !excludedCategories.contains(dest.category.toLowerCase()))
+        .toList()
+      ..sort((a, b) => b.rating.compareTo(a.rating));
+
+    if (topDestinations.isEmpty) {
+      return const Text("No top destinations available");
+    }
+
+    return Column(
+      children: topDestinations.take(5).map((dest) {
+        return GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => DestinationDetailsScreen(
+                  title: dest.name,
+                ),
               ),
+            );
+          },
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.green.shade50,
+              borderRadius: BorderRadius.circular(16),
             ),
-            const SizedBox(width: 10),
-            Text(title),
-          ],
-        ),
-      ),
+            child: Row(
+              children: [
+                Container(
+                  width: 50,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: Colors.green.shade200,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                const SizedBox(width: 12),
+
+                // 📌 Name + description
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        dest.name,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        dest.description,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(color: Colors.black54),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(width: 8),
+                Text("⭐ ${dest.rating}"),
+              ],
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
+
 }

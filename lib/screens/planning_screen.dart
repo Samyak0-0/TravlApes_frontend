@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../services/routing_service.dart';
+import '../services/location_service.dart';
 import 'route_map_screen.dart';
 
 class PlanningScreen extends StatelessWidget {
@@ -26,60 +28,49 @@ class PlanningScreen extends StatelessWidget {
               ),
             ),
 
-            const SizedBox(height: 20),
-
-            _infoCard("Status", "Planned"),
-            _infoCard("Dates", "Not set"),
-            _infoCard("Trip Type", "Not specified"),
-            _infoCard("Transport", "Car"),
-            _infoCard("Budget", "Not specified"),
-
             const Spacer(),
 
-            /// 🧪 TEST MAP BUTTON (NO BACKEND)
             ElevatedButton.icon(
-              icon: const Icon(Icons.map),
-              label: const Text("Test Map (Hardcoded Route)"),
+              icon: const Icon(Icons.my_location),
+              label: const Text("Route from my location"),
               style: ElevatedButton.styleFrom(
                 minimumSize: const Size.fromHeight(48),
               ),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => RouteMapScreen(
-                      coordinates: const [
-                        [85.3240, 27.7172], // Start (Kathmandu)
-                        [85.3250, 27.6736], // End
-                      ],
+              onPressed: () async {
+                try {
+                  // 1️⃣ Get current GPS location
+                  final position =
+                      await LocationService.getCurrentLocation();
+
+                  // 2️⃣ Fetch route from backend
+                  final route = await RouteService.fetchRoute(
+                    profile: "car",
+                    startLat: position.latitude,
+                    startLon: position.longitude,
+                    endLat: 27.6736, // Destination
+                    endLon: 85.3250,
+                  );
+
+                  if (!context.mounted) return;
+
+                  // 3️⃣ Show route on map
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => RouteMapScreen(
+                        coordinates: route,
+                      ),
                     ),
-                  ),
-                );
+                  );
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("Route error: $e")),
+                  );
+                }
               },
             ),
-
-            const SizedBox(height: 12),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _infoCard(String label, String value) {
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.green.shade50,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
-          Text(value, style: const TextStyle(color: Colors.grey)),
-        ],
       ),
     );
   }

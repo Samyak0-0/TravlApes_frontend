@@ -64,8 +64,8 @@ class _LoginsignupState extends State<Loginsignup> {
     setState(() => _loading = true);
 
     final url = _isLogin
-        ? 'http://10.10.255.17:8000/login'
-        : 'http://10.10.255.17:8000/register';
+        ? 'http://10.10.254.254:8000/login'
+        : 'http://10.10.254.254:8000/register';
 
     final bodyMap = _isLogin
         ? {

@@ -42,7 +42,18 @@ class RouteMapScreen extends StatelessWidget {
             userAgentPackageName: 'com.example.paryatan_mantralaya_f',
           ),
 
-          // Start marker
+          // Route line
+          PolylineLayer(
+            polylines: [
+              Polyline(
+                points: points,
+                strokeWidth: 4,
+                color: Colors.blue,
+              ),
+            ],
+          ),
+
+          // Start & end markers
           MarkerLayer(
             markers: [
               Marker(
@@ -55,8 +66,6 @@ class RouteMapScreen extends StatelessWidget {
                   size: 40,
                 ),
               ),
-
-              // End marker
               Marker(
                 point: points.last,
                 width: 40,
@@ -66,17 +75,6 @@ class RouteMapScreen extends StatelessWidget {
                   color: Colors.red,
                   size: 40,
                 ),
-              ),
-            ],
-          ),
-
-          // Route polyline
-          PolylineLayer(
-            polylines: [
-              Polyline(
-                points: points,
-                strokeWidth: 4,
-                color: Colors.blue,
               ),
             ],
           ),
