@@ -269,16 +269,12 @@ class RecommendationService {
       }
 
       // Radius check
-      if (!isWithinRadius(latitude, longitude, place, 2)) {
-        continue;
-      }
+      //if (!isWithinRadius(latitude, longitude, place, 2)) {
+      //  continue;
+      //}
 
       double score = 0;
       for (final mood in moods) {
-        List<Category>? cats = MOOD_TO_CATEGORY[mood];
-        if (cats == null || !cats.contains(place.category)) {
-          continue;
-        }
         if (place.compatable_moods != null) {
           for (final compatibleMood in place.compatable_moods!) {
             if (mood == compatibleMood) {

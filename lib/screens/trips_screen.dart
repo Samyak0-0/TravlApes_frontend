@@ -114,7 +114,7 @@ class TripsScreen extends StatelessWidget {
                     context,
                     MaterialPageRoute(
                       builder: (_) =>
-                          PastTripScreen(destination: trip.destination),
+                          PastTripScreen(tripId: trip.id),
                     ),
                   );
                 };

@@ -13,6 +13,7 @@ class Trip {
   final DateTime? toDate;
   final List<Mood>? moods;
   final double? budget;
+  final double? expense;
 
   Trip({
     String? id,
@@ -25,6 +26,7 @@ class Trip {
     this.toDate,
     this.moods,
     this.budget,
+    this.expense
   })  : id = id ?? DateTime.now().microsecondsSinceEpoch.toString(),
         dayWiseAttractions = dayWiseAttractions ?? {};
 
@@ -60,6 +62,7 @@ class Trip {
       'toDate': toDate?.toIso8601String(),
       'moods': moods?.map((m) => m.index).toList(),
       'budget': budget,
+      'expense': expense,
     };
   }
 
@@ -133,6 +136,7 @@ class Trip {
           ? (json['moods'] as List).map((i) => Mood.values[i]).toList()
           : null,
       budget: json['budget']?.toDouble(),
+      expense: json['expense']?.toDouble(),
     );
   }
 
@@ -148,6 +152,7 @@ class Trip {
     DateTime? toDate,
     List<Mood>? moods,
     double? budget,
+    double? expense,
   }) {
     return Trip(
       id: id ?? this.id,
@@ -160,6 +165,7 @@ class Trip {
       toDate: toDate ?? this.toDate,
       moods: moods ?? this.moods,
       budget: budget ?? this.budget,
+      expense: expense ?? this.expense,
     );
   }
 }

@@ -275,8 +275,8 @@ class _OngoingTripScreenState extends State<OngoingTripScreen> {
     });
   }
 
-  void _showExpenseDialog(Destination destination) {
-    final TextEditingController expenseController = TextEditingController();
+  void _showbudgetDialog(Destination destination) {
+    final TextEditingController budgetController = TextEditingController();
     
     showDialog(
       context: context,
@@ -324,7 +324,7 @@ class _OngoingTripScreenState extends State<OngoingTripScreen> {
                       style: TextStyle(fontWeight: FontWeight.w500),
                     ),
                     Text(
-                      '\${_trip!.budget.toStringAsFixed(2)}',
+                      '${(_trip!.budget! - _trip!.expense!).toStringAsFixed(2)}',
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
@@ -337,7 +337,7 @@ class _OngoingTripScreenState extends State<OngoingTripScreen> {
               const SizedBox(height: 16),
             ],
             TextField(
-              controller: expenseController,
+              controller: budgetController,
               keyboardType: TextInputType.numberWithOptions(decimal: true),
               decoration: InputDecoration(
                 labelText: 'Amount Spent',
@@ -361,7 +361,7 @@ class _OngoingTripScreenState extends State<OngoingTripScreen> {
           ),
           ElevatedButton(
             onPressed: () async {
-              final amountStr = expenseController.text.trim();
+              final amountStr = budgetController.text.trim();
               if (amountStr.isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
@@ -385,7 +385,7 @@ class _OngoingTripScreenState extends State<OngoingTripScreen> {
 
               if (_trip != null) {
                 // Deduct from budget
-                await TripStore().updateTripBudget(widget.tripId, _trip!.budget! - amount);
+                await TripStore().updateTripExpense(widget.tripId, amount);
                 
                 // Reload trip data
                 _loadTripData();
@@ -398,7 +398,7 @@ class _OngoingTripScreenState extends State<OngoingTripScreen> {
                 
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text('Expense of \${amount.toStringAsFixed(2)} added'),
+                    content: Text('budget of ${amount.toStringAsFixed(2)} added'),
                     backgroundColor: Colors.green,
                   ),
                 );
@@ -496,7 +496,7 @@ class _OngoingTripScreenState extends State<OngoingTripScreen> {
                 child: ElevatedButton.icon(
                   onPressed: () {
                     Navigator.of(context).pop();
-                    _showExpenseDialog(destination);
+                    _showbudgetDialog(destination);
                   },
                   icon: const Icon(Icons.attach_money, size: 18),
                   label: const Text('Expense'),
@@ -1107,7 +1107,7 @@ class _OngoingTripScreenState extends State<OngoingTripScreen> {
                       ],
                     ),
                     Text(
-                      '${_trip!.budget!.toStringAsFixed(2)}',
+                      '${(_trip!.budget! - _trip!.expense!).toStringAsFixed(2)}',
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 24,

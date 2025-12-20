@@ -56,6 +56,7 @@ class TripStore {
       toDate: toDate,
       moods: moods,
       budget: budget,
+      expense: 0,
     );
 
     tripsNotifier.value = [
@@ -291,7 +292,7 @@ class TripStore {
     }
   }
 
-  Future<void> updateTripBudget(String tripId, double newBudget) async {
+  Future<void> updateTripExpense(String tripId, double expense) async {
     try {
       // Find the trip in the list
       final tripIndex = trips.indexWhere((trip) => trip.id == tripId);
@@ -310,7 +311,8 @@ class TripStore {
         status: trips[tripIndex].status,
         fromDate: trips[tripIndex].fromDate,
         toDate: trips[tripIndex].toDate,
-        budget: newBudget, // Updated budget
+        budget: trips[tripIndex].budget,
+        expense: trips[tripIndex].expense! + expense,
         moods: trips[tripIndex].moods,
       );
       
