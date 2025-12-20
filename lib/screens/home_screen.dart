@@ -76,7 +76,7 @@ class _HomeScreenState extends State<HomeScreen> {
       filteredDestinations = destinations.where((dest) {
         return dest.name.toLowerCase().contains(query) ||
             dest.description.toLowerCase().contains(query) ||
-            dest.category.toLowerCase().contains(query);
+            dest.category.toString().split('.').last.toLowerCase().contains(query);
       }).toList();
     });
   }
@@ -305,7 +305,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final sourceList = isSearching ? filteredDestinations : destinations;
 
     final filtered = sourceList.where((dest) {
-      if (excludedCategories.contains(dest.category.toLowerCase())) {
+      if (excludedCategories.contains(dest.category.toString().split('.').last.toLowerCase())) {
         return false;
       }
 

@@ -115,7 +115,7 @@ class DestinationDetailsScreen extends StatelessWidget {
       children: [
         _InfoBox(title: "Location", value: destination.location),
         _InfoBox(title: "Rating", value: "⭐ ${destination.rating}"),
-        _InfoBox(title: "Category", value: destination.category),
+        _InfoBox(title: "Category", value: destination.category.toString().split('.').last),
       ],
     );
   }
