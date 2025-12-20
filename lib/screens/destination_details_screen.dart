@@ -3,7 +3,7 @@ import '../models/destination_model.dart';
 import '../store/favourite_store.dart';
 import 'plan_trip_screen.dart';
 
-class DestinationDetailsScreen extends StatelessWidget {
+class DestinationDetailsScreen extends StatefulWidget {
   final Destination destination;
 
   const DestinationDetailsScreen({
@@ -12,15 +12,28 @@ class DestinationDetailsScreen extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final isFavourite =
-        FavouriteStore().isFavourite(destination.name);
+  State<DestinationDetailsScreen> createState() =>
+      _DestinationDetailsScreenState();
+}
 
+class _DestinationDetailsScreenState
+    extends State<DestinationDetailsScreen> {
+  late bool isFavourite;
+
+  @override
+  void initState() {
+    super.initState();
+    isFavourite =
+        FavouriteStore().isFavourite(widget.destination.name);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       body: Column(
         children: [
           _topSection(context),
-          Expanded(child: _detailsSection(context, isFavourite)),
+          Expanded(child: _detailsSection(context)),
         ],
       ),
     );
@@ -39,9 +52,9 @@ class DestinationDetailsScreen extends StatelessWidget {
               bottomRight: Radius.circular(30),
             ),
           ),
-          child: destination.imageUrl.isNotEmpty
+          child: widget.destination.imageUrl.isNotEmpty
               ? Image.network(
-                  destination.imageUrl,
+                  widget.destination.imageUrl,
                   fit: BoxFit.cover,
                 )
               : null,
@@ -65,7 +78,7 @@ class DestinationDetailsScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                destination.name,
+                widget.destination.name,
                 style: const TextStyle(
                   fontSize: 26,
                   fontWeight: FontWeight.bold,
@@ -73,7 +86,7 @@ class DestinationDetailsScreen extends StatelessWidget {
                 ),
               ),
               Text(
-                destination.location,
+                widget.destination.location,
                 style: const TextStyle(color: Colors.white70),
               ),
             ],
@@ -83,7 +96,7 @@ class DestinationDetailsScreen extends StatelessWidget {
     );
   }
 
-  Widget _detailsSection(BuildContext context, bool isFavourite) {
+  Widget _detailsSection(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -98,12 +111,12 @@ class DestinationDetailsScreen extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            destination.description,
+            widget.destination.description,
             style: const TextStyle(color: Colors.grey),
           ),
 
           const Spacer(),
-          _bottomButtons(context, isFavourite),
+          _bottomButtons(context),
         ],
       ),
     );
@@ -113,37 +126,24 @@ class DestinationDetailsScreen extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        _InfoBox(title: "Location", value: destination.location),
-        _InfoBox(title: "Rating", value: "⭐ ${destination.rating}"),
-        _InfoBox(title: "Category", value: destination.category),
+        _InfoBox(title: "Location", value: widget.destination.location),
+        _InfoBox(title: "Rating", value: "⭐ ${widget.destination.rating}"),
+        _InfoBox(title: "Category", value: widget.destination.category),
       ],
     );
   }
 
-  Widget _bottomButtons(BuildContext context, bool isFavourite) {
+  Widget _bottomButtons(BuildContext context) {
     return Row(
       children: [
         Expanded(
           child: OutlinedButton.icon(
-            onPressed: () async {
-              if (!isFavourite) {
-                await FavouriteStore()
-                    .addFavourite(destination.name);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                        "${destination.name} added to favourites"),
-                  ),
-                );
-              }
-            },
+            onPressed: _toggleFavourite,
             icon: Icon(
-              isFavourite
-                  ? Icons.favorite
-                  : Icons.favorite_border,
+              isFavourite ? Icons.favorite : Icons.favorite_border,
               color: isFavourite ? Colors.red : null,
             ),
-            label: const Text("Favourite"),
+            label: Text(isFavourite ? "Unfavourite" : "Favourite"),
           ),
         ),
         const SizedBox(width: 12),
@@ -154,7 +154,7 @@ class DestinationDetailsScreen extends StatelessWidget {
                 context,
                 MaterialPageRoute(
                   builder: (_) =>
-                      PlanTripScreen(destination: destination.name),
+                      PlanTripScreen(destination: widget.destination.name),
                 ),
               );
             },
@@ -163,6 +163,31 @@ class DestinationDetailsScreen extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  // 🔄 TOGGLE FAVOURITE
+  Future<void> _toggleFavourite() async {
+    if (isFavourite) {
+      await FavouriteStore()
+          .removeFavourite(widget.destination.name);
+    } else {
+      await FavouriteStore()
+          .addFavourite(widget.destination.name);
+    }
+
+    setState(() {
+      isFavourite = !isFavourite;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          isFavourite
+              ? "${widget.destination.name} added to favourites"
+              : "${widget.destination.name} removed from favourites",
+        ),
+      ),
     );
   }
 }
