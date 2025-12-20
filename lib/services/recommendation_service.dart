@@ -75,7 +75,7 @@ class RecommendationService {
     return filtered;
   }
 
-  Future<RecommendationResult> generateRecommendations({
+Future<RecommendationResult> generateRecommendations({
     required String location,
     required DateTime fromDate,
     required DateTime toDate,
@@ -85,21 +85,14 @@ class RecommendationService {
     ApiService apiService = ApiService();
     final placesData = await apiService.getPlacesFromLocation(location);
     final tripDays = toDate.difference(fromDate).inDays + 1;
-
     List<MapEntry<double, Destination>> primaryAttractions = [];
     List<MapEntry<double, Destination>> accommodations = [];
-
-    int recommendedPrimary = 0;
-    int recommendedAccommodations = 0;
-
+    
     // Collecting primary attractions based on moods
     for (final place in placesData) {
       double score = 0;
-
       for (final mood in moods) {
         // Check if place category matches mood categories
-        // This would need your MOOD_TO_CATEGORY mapping
-
         List<Category>? cats = MOOD_TO_CATEGORY[mood];
         if (cats == null || !cats.contains(place.category)) {
           continue;
@@ -113,21 +106,18 @@ class RecommendationService {
           }
         }
       }
-
       if (score > 0) {
         primaryAttractions.add(MapEntry(score, place));
       }
     }
-
+    
     // Collecting accommodations
     for (final place in placesData) {
       final categoryStr = place.category?.toString().split('.').last.toLowerCase() ?? '';
       if (categoryStr != Category.accomodations.value) {
         continue;
       }
-
       double score = 0;
-
       if (place.compatable_moods != null) {
         for (final mood in moods) {
           for (final compatibleMood in place.compatable_moods!) {
@@ -137,63 +127,44 @@ class RecommendationService {
           }
         }
       }
-
       if (score > 0) {
         accommodations.add(MapEntry(score, place));
       }
     }
-
-    // Filter accommodations within radius of primary attractions
-    //accommodations = filterWithinRadius(
-    //  primaryAttractions,
-    //  accommodations,
-    //  2.0,
-    //);
-
+    
     // Sort by score + rating
     primaryAttractions.sort((a, b) {
       final scoreA = a.key + (a.value.rating ?? 0.0);
       final scoreB = b.key + (b.value.rating ?? 0.0);
       return scoreB.compareTo(scoreA); // Descending order
     });
-
+    
     accommodations.sort((a, b) {
       final scoreA = a.key + (a.value.rating ?? 0.0);
       final scoreB = b.key + (b.value.rating ?? 0.0);
       return scoreB.compareTo(scoreA); // Descending order
     });
-
-
-    // Handle accommodations (no accommodation needed for 1-day trip)
+    
+    // Filter accommodations within budget (no accommodation needed for 1-day trip)
+    List<Destination> accommodationDestinations = [];
     if (tripDays > 1) {
-      for (final entry in accommodations) {
-        final place = entry.value;
-        final avgPrice = place.avg_price ?? 0.0;
-
-        if (budget >= avgPrice) {
-          recommendedAccommodations += 1; }
-      }
+      accommodationDestinations = accommodations
+          .where((entry) => (entry.value.avg_price ?? 0.0) <= budget)
+          .map((e) => e.value)
+          .toList();
     }
-
-    // Select primary attractions within budget
-    for (final entry in primaryAttractions) {
-      final place = entry.value;
-      final avgPrice = place.avg_price ?? 0.0;
-
-      if (budget >= avgPrice) {
-        recommendedPrimary += 1;
-      }
-    }
-
-    // Extract destinations from entries
-    final primaryDestinations = primaryAttractions.map((e) => e.value).toList();
-    final accommodationDestinations = accommodations.map((e) => e.value).toList();
-
+    
+    // Filter primary attractions within budget
+    final primaryDestinations = primaryAttractions
+        .where((entry) => (entry.value.avg_price ?? 0.0) <= budget)
+        .map((e) => e.value)
+        .toList();
+    
     return RecommendationResult(
       primary: primaryDestinations,
-      recommendedPrimary: recommendedPrimary,
+      recommendedPrimary: primaryDestinations.length,
       accommodations: accommodationDestinations,
-      recommendedAccommodations: recommendedAccommodations,
+      recommendedAccommodations: accommodationDestinations.length,
     );
   }
 

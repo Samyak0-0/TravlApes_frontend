@@ -1,450 +1,233 @@
 import 'package:flutter/material.dart';
-import 'package:paryatan_mantralaya_f/models/destination_model.dart';
-import 'package:paryatan_mantralaya_f/services/recommendation_service.dart';
-import 'package:paryatan_mantralaya_f/screens/ongoing_trip_screen.dart';
-import 'package:paryatan_mantralaya_f/store/trip_store.dart';
-import '../services/routing_service.dart';
-import '../services/location_service.dart';
-import 'route_map_screen.dart';
+import '../models/destination_model.dart';
+import '../services/recommendation_service.dart';
 
 class PlanningScreen extends StatefulWidget {
   final String destination;
+  final DateTime fromDate;
+  final DateTime toDate;
+  final List<Mood> moods;
+  final double budget;
 
   const PlanningScreen({
     super.key,
     required this.destination,
+    required this.fromDate,
+    required this.toDate,
+    required this.moods,
+    required this.budget,
   });
-  
+
   @override
   State<PlanningScreen> createState() => _PlanningScreenState();
 }
 
-class _PlanningScreenState extends State<PlanningScreen> with SingleTickerProviderStateMixin {
+class _PlanningScreenState extends State<PlanningScreen>
+    with SingleTickerProviderStateMixin {
   final RecommendationService recService = RecommendationService();
-  
+
   List<Destination> allPrimary = [];
   List<Destination> allAccommodations = [];
   List<Destination> selectedAccommodations = [];
   Map<int, List<Destination>> dayWiseAttractions = {};
-  
+
   int recommendedPrimary = 0;
   int recommendedAccommodations = 0;
-  String? error;
+
   bool isLoading = false;
-  
+  String? error;
+
   late TabController _tabController;
-  final DateTime fromDate = DateTime(2025, 1, 15);
-  final DateTime toDate = DateTime(2025, 1, 20);
-  final List<Mood> moods = [Mood.cultural];
-  final double budget = 15000.0;
-  
-  int get tripDays => toDate.difference(fromDate).inDays + 1;
-  
+
+  int get tripDays =>
+      widget.toDate.difference(widget.fromDate).inDays + 1;
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: tripDays, vsync: this);
     _loadRecommendations();
   }
-  
+
   @override
   void dispose() {
     _tabController.dispose();
     super.dispose();
   }
-  
+
+  // 🔹 LOAD DATA
   Future<void> _loadRecommendations() async {
     setState(() {
       isLoading = true;
       error = null;
     });
-    
+
     try {
-      final RecommendationResult result = await recService.generateRecommendations(
+      final result = await recService.generateRecommendations(
         location: widget.destination,
-        fromDate: fromDate,
-        toDate: toDate,
-        moods: moods,
-        budget: budget,
+        fromDate: widget.fromDate,
+        toDate: widget.toDate,
+        moods: widget.moods,
+        budget: widget.budget,
       );
-      
+
       allPrimary = result.primary;
       allAccommodations = result.accommodations;
       recommendedPrimary = result.recommendedPrimary;
       recommendedAccommodations = result.recommendedAccommodations;
-      
-      // Get top 3 accommodations
-      selectedAccommodations = allAccommodations
-          .take(recommendedAccommodations.clamp(0, 3))
-          .toList();
-      
-      // Distribute places into days
-      final recommendedPrimaryList = allPrimary.take(recommendedPrimary).toList();
-      final distributedAttractions = await recService.distributePlacesIntoDays(
-        primaryAttractions: recommendedPrimaryList,
-        fromDate: fromDate,
-        toDate: toDate,
+
+      selectedAccommodations =
+          allAccommodations.take(recommendedAccommodations.clamp(0, 3)).toList();
+
+      final distributed = await recService.distributePlacesIntoDays(
+        primaryAttractions: allPrimary.take(recommendedPrimary).toList(),
+        fromDate: widget.fromDate,
+        toDate: widget.toDate,
       );
-      
-      // Limit each day to maximum 3 attractions
+
       dayWiseAttractions = {};
-      for (var day = 1; day <= tripDays; day++) {
-        final attractions = distributedAttractions[day] ?? [];
-        dayWiseAttractions[day] = attractions.take(3).toList();
+      for (int i = 1; i <= tripDays; i++) {
+        dayWiseAttractions[i] =
+            (distributed[i] ?? []).take(3).toList();
       }
-      
-      setState(() {
-        isLoading = false;
-      });
-    } catch (e, stackTrace) {
-      print('Error: $e');
-      print('Stack trace: $stackTrace');
+
+      setState(() => isLoading = false);
+    } catch (e) {
       setState(() {
         error = e.toString();
         isLoading = false;
       });
     }
   }
-  
-  void _removeAccommodation(Destination accommodation) {
-    setState(() {
-      selectedAccommodations.remove(accommodation);
-    });
+
+  // 🔹 COMMON UI
+  Widget _sectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      child: Text(
+        title,
+        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+      ),
+    );
   }
-  
-  void _showAddAccommodationDialog() {
-    final availableAccommodations = allAccommodations
-        .where((acc) => !selectedAccommodations.contains(acc))
+
+  // 🔹 ACCOMMODATIONS
+  void _removeAccommodation(Destination acc) {
+    setState(() => selectedAccommodations.remove(acc));
+  }
+
+  void _addAccommodationDialog() {
+    final available = allAccommodations
+        .where((a) => !selectedAccommodations.contains(a))
         .toList();
-    
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (_) => AlertDialog(
         title: const Text('Add Accommodation'),
         content: SizedBox(
           width: double.maxFinite,
-          child: availableAccommodations.isEmpty
+          child: available.isEmpty
               ? const Text('No more accommodations available')
               : ListView.builder(
                   shrinkWrap: true,
-                  itemCount: availableAccommodations.length,
-                  itemBuilder: (context, index) {
-                    final acc = availableAccommodations[index];
+                  itemCount: available.length,
+                  itemBuilder: (_, i) {
+                    final acc = available[i];
                     return ListTile(
                       title: Text(acc.name ?? 'Unknown'),
-                      subtitle: Text('NPR ${acc.avg_price.toStringAsFixed(2)}'),
+                      subtitle:
+                          Text('NPR ${acc.avg_price.toStringAsFixed(0)}'),
                       trailing: Text('⭐ ${acc.rating}'),
                       onTap: () {
-                        setState(() {
-                          selectedAccommodations.add(acc);
-                        });
+                        setState(() => selectedAccommodations.add(acc));
                         Navigator.pop(context);
                       },
                     );
                   },
                 ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-        ],
       ),
     );
   }
-  
-  void _removeAttractionFromDay(int day, Destination attraction) {
-    setState(() {
-      dayWiseAttractions[day]?.remove(attraction);
-    });
-  }
-  
-  void _showAddAttractionDialog(int day) {
-    final alreadyAdded = dayWiseAttractions.values
-        .expand((list) => list)
-        .toSet();
-    
-    final availableAttractions = allPrimary
-        .take(recommendedPrimary)
-        .where((attr) => !alreadyAdded.contains(attr))
-        .toList();
-    
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Add Attraction to Day $day'),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: availableAttractions.isEmpty
-              ? const Text('No more attractions available')
-              : ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: availableAttractions.length,
-                  itemBuilder: (context, index) {
-                    final attr = availableAttractions[index];
-                    return ListTile(
-                      title: Text(attr.name ?? 'Unknown'),
-                      subtitle: Text(attr.category.toString().split('.').last),
-                      trailing: Text('⭐ ${attr.rating}'),
-                      onTap: () {
-                        setState(() {
-                          dayWiseAttractions[day]?.add(attr);
-                        });
-                        Navigator.pop(context);
-                      },
-                    );
-                  },
-                ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-        ],
-      ),
-    );
-  }
-  
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Planning: ${widget.destination}'),
-        backgroundColor: Colors.teal,
-      ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : error != null
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.error_outline, size: 64, color: Colors.red),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Error: $error',
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(fontSize: 16),
-                        ),
-                        const SizedBox(height: 24),
-                        ElevatedButton.icon(
-                          onPressed: _loadRecommendations,
-                          icon: const Icon(Icons.refresh),
-                          label: const Text('Retry'),
-                        ),
-                      ],
-                    ),
-                  ),
-                )
-              : Column(
-                  children: [
-                    // Accommodations Section
-                    _buildAccommodationsSection(),
-                    
-                    // Day-wise Tabs
-                    TabBar(
-                      controller: _tabController,
-                      isScrollable: true,
-                      labelColor: Colors.teal,
-                      unselectedLabelColor: Colors.grey,
-                      indicatorColor: Colors.teal,
-                      tabs: List.generate(
-                        tripDays,
-                        (index) => Tab(text: 'Day ${index + 1}'),
-                      ),
-                    ),
-                    
-                    // Day-wise Content
-                    Expanded(
-                      child: TabBarView(
-                        controller: _tabController,
-                        children: List.generate(
-                          tripDays,
-                          (index) => _buildDayContent(index + 1),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-    );
-  }
-  
-  Widget _buildAccommodationsSection() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      color: Colors.teal.shade50,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Accommodations',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              IconButton(
-                onPressed: _showAddAccommodationDialog,
-                icon: const Icon(Icons.add_circle, color: Colors.teal),
-                tooltip: 'Add Accommodation',
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          SizedBox(
-            height: 120,
-            child: selectedAccommodations.isEmpty
-                ? const Center(child: Text('No accommodations selected'))
-                : ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: selectedAccommodations.length,
-                    itemBuilder: (context, index) {
-                      final acc = selectedAccommodations[index];
-                      return Card(
-                        margin: const EdgeInsets.only(right: 12),
-                        child: Container(
-                          width: 200,
-                          padding: const EdgeInsets.all(12),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      acc.name ?? 'Unknown',
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(Icons.delete, size: 20),
-                                    onPressed: () => _removeAccommodation(acc),
-                                    padding: EdgeInsets.zero,
-                                    constraints: const BoxConstraints(),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 4),
-                              Row(
-                                children: [
-                                  const Icon(Icons.star, size: 14, color: Colors.amber),
-                                  const SizedBox(width: 4),
-                                  Text('${acc.rating}'),
-                                ],
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'NPR ${acc.avg_price.toStringAsFixed(2)}',
-                                style: const TextStyle(fontSize: 12),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-          ),
-        ],
-      ),
-    );
-  }
-  
-  Widget _buildDayContent(int day) {
-    final attractions = dayWiseAttractions[day] ?? [];
-    
+
+  Widget _buildAccommodationSection() {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Attractions for Day $day',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(
-                    '${attractions.length} attractions',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                ],
-              ),
-              IconButton(
-                onPressed: () => _showAddAttractionDialog(day),
-                icon: const Icon(Icons.add_circle, color: Colors.teal),
-                tooltip: 'Add Attraction',
-              ),
-            ],
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            _sectionTitle("Accommodations"),
+            IconButton(
+              icon: const Icon(Icons.add_circle, color: Colors.teal),
+              onPressed: _addAccommodationDialog,
+            ),
+          ],
         ),
-        Expanded(
-          child: attractions.isEmpty
-              ? const Center(
-                  child: Text(
-                    'No attractions for this day',
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                )
-              : ListView.builder(
+        SizedBox(
+          height: 150,
+          child: selectedAccommodations.isEmpty
+              ? const Center(child: Text("No accommodations selected"))
+              : ListView.separated(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: attractions.length,
-                  itemBuilder: (context, index) {
-                    final attraction = attractions[index];
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: Colors.teal,
-                          child: Text(
-                            attraction.name?.substring(0, 1).toUpperCase() ?? '?',
-                            style: const TextStyle(color: Colors.white),
+                  scrollDirection: Axis.horizontal,
+                  itemCount: selectedAccommodations.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 14),
+                  itemBuilder: (_, i) {
+                    final acc = selectedAccommodations[i];
+                    return Container(
+                      width: 220,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade200,
+                        borderRadius: BorderRadius.circular(22),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.08),
+                            blurRadius: 10,
+                            offset: const Offset(0, 6),
                           ),
-                        ),
-                        title: Text(
-                          attraction.name ?? 'Unknown',
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        subtitle: Column(
+                        ],
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(14),
+                        child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              'Category: ${attraction.category.toString().split('.').last}',
-                            ),
                             Row(
                               children: [
-                                const Icon(Icons.star, size: 14, color: Colors.amber),
-                                const SizedBox(width: 4),
-                                Text('${attraction.rating}'),
-                                const SizedBox(width: 12),
-                                Text('NPR ${attraction.avg_price.toStringAsFixed(2)}'),
+                                Expanded(
+                                  child: Text(
+                                    acc.name ?? "Unknown",
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                                IconButton(
+                                  icon:
+                                      const Icon(Icons.close, size: 18),
+                                  onPressed: () =>
+                                      _removeAccommodation(acc),
+                                ),
                               ],
                             ),
+                            const SizedBox(height: 6),
+                            Text("⭐ ${acc.rating}",
+                                style:
+                                    const TextStyle(fontSize: 13)),
+                            const SizedBox(height: 4),
+                            Text(
+                              "NPR ${acc.avg_price.toStringAsFixed(0)}",
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: Colors.black54,
+                              ),
+                            ),
                           ],
-                        ),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red),
-                          onPressed: () => _removeAttractionFromDay(day, attraction),
                         ),
                       ),
                     );
@@ -452,6 +235,158 @@ class _PlanningScreenState extends State<PlanningScreen> with SingleTickerProvid
                 ),
         ),
       ],
+    );
+  }
+
+  // 🔹 ATTRACTIONS
+  void _removeAttraction(int day, Destination d) {
+    setState(() => dayWiseAttractions[day]?.remove(d));
+  }
+
+  void _addAttractionDialog(int day) {
+    final alreadyAdded =
+        dayWiseAttractions.values.expand((e) => e).toSet();
+
+    final available = allPrimary
+        .take(recommendedPrimary)
+        .where((a) => !alreadyAdded.contains(a))
+        .toList();
+
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text('Add Attraction (Day $day)'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: available.isEmpty
+              ? const Text('No attractions left')
+              : ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: available.length,
+                  itemBuilder: (_, i) {
+                    final a = available[i];
+                    return ListTile(
+                      title: Text(a.name ?? 'Unknown'),
+                      trailing: Text('⭐ ${a.rating}'),
+                      onTap: () {
+                        setState(() => dayWiseAttractions[day]?.add(a));
+                        Navigator.pop(context);
+                      },
+                    );
+                  },
+                ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDay(int day) {
+    final attractions = dayWiseAttractions[day] ?? [];
+
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                "Attractions",
+                style:
+                    TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              IconButton(
+                onPressed: () => _addAttractionDialog(day),
+                icon:
+                    const Icon(Icons.add_circle, color: Colors.teal),
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: attractions.isEmpty
+              ? const Center(child: Text("No attractions"))
+              : ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: attractions.length,
+                  itemBuilder: (_, i) {
+                    final a = attractions[i];
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 14),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade200,
+                        borderRadius: BorderRadius.circular(22),
+                      ),
+                      child: ListTile(
+                        contentPadding:
+                            const EdgeInsets.symmetric(
+                                horizontal: 18, vertical: 8),
+                        title: Text(
+                          a.name ?? "Unknown",
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w600),
+                        ),
+                        subtitle: Text(
+                          "⭐ ${a.rating}  •  NPR ${a.avg_price.toStringAsFixed(0)}",
+                          style: const TextStyle(fontSize: 13),
+                        ),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.delete,
+                              color: Colors.red),
+                          onPressed: () =>
+                              _removeAttraction(day, a),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+        ),
+      ],
+    );
+  }
+
+  // 🔹 MAIN BUILD
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          widget.destination,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 0,
+      ),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : error != null
+              ? Center(child: Text(error!))
+              : Column(
+                  children: [
+                    _buildAccommodationSection(),
+                    TabBar(
+                      controller: _tabController,
+                      isScrollable: true,
+                      indicatorColor: Colors.teal,
+                      labelColor: Colors.teal,
+                      unselectedLabelColor: Colors.black54,
+                      tabs: List.generate(
+                        tripDays,
+                        (i) => Tab(text: "Day ${i + 1}"),
+                      ),
+                    ),
+                    Expanded(
+                      child: TabBarView(
+                        controller: _tabController,
+                        children: List.generate(
+                          tripDays,
+                          (i) => _buildDay(i + 1),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
     );
   }
 }

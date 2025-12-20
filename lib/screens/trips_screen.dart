@@ -9,7 +9,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 class TripsScreen extends StatelessWidget {
   const TripsScreen({super.key});
 
-  // 🔗 SAME IMAGES AS HOME PAGE
   static const Map<String, String> locationImages = {
     "Kathmandu":
         "https://admin.ntb.gov.np/image-cache/KDS_oy_lt_(1)-1631095017.jpg?p=main&s=3b13becca2e45fb61e28d3207a8aefff",
@@ -37,19 +36,19 @@ class TripsScreen extends StatelessWidget {
                 context,
                 title: "Planned Trips",
                 trips: store.plannedTrips,
-                type: _TripType.planned,
+                type: TripStatus.planned,
               ),
               _tripSection(
                 context,
                 title: "Ongoing Trips",
                 trips: store.ongoingTrips,
-                type: _TripType.ongoing,
+                type: TripStatus.ongoing,
               ),
               _tripSection(
                 context,
                 title: "Past Trips",
                 trips: store.pastTrips,
-                type: _TripType.past,
+                type: TripStatus.past,
               ),
             ],
           );
@@ -62,44 +61,43 @@ class TripsScreen extends StatelessWidget {
     BuildContext context, {
     required String title,
     required List<Trip> trips,
-    required _TripType type,
+    required TripStatus type,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        Text(title,
+            style:
+                const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         const SizedBox(height: 12),
 
         if (trips.isEmpty)
           const Padding(
             padding: EdgeInsets.only(bottom: 24),
-            child: Text(
-              "No trips",
-              style: TextStyle(color: Colors.grey),
-            ),
+            child: Text("No trips",
+                style: TextStyle(color: Colors.grey)),
           )
         else
           Column(
             children: trips.map((trip) {
               VoidCallback? onTap;
 
-              if (type == _TripType.planned) {
+              if (type == TripStatus.planned) {
                 onTap = () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) =>
-                          PlanningScreen(destination: trip.destination),
+                      builder: (_) => PlanningScreen(
+                        destination: trip.destination,
+                        fromDate: trip.fromDate!,
+                        toDate: trip.toDate!,
+                        moods: trip.moods!,
+                        budget: trip.budget!,
+                      ),
                     ),
                   );
                 };
-              } else if (type == _TripType.ongoing) {
+              } else if (type == TripStatus.ongoing) {
                 onTap = () {
                   Navigator.push(
                     context,
@@ -109,7 +107,7 @@ class TripsScreen extends StatelessWidget {
                     ),
                   );
                 };
-              } else if (type == _TripType.past) {
+              } else {
                 onTap = () {
                   Navigator.push(
                     context,
@@ -145,38 +143,16 @@ class TripsScreen extends StatelessWidget {
                           imageUrl:
                               locationImages[trip.destination] ?? "",
                           fit: BoxFit.cover,
-                          placeholder: (_, __) =>
-                              Container(color: Colors.grey.shade300),
-                          errorWidget: (_, __, ___) =>
-                              Container(color: Colors.grey.shade300),
                         ),
-
-                        // 🌫 DARK OVERLAY
-                        Container(
-                          color: Colors.black.withOpacity(0.45),
-                        ),
-
-                        // 📍 LOCATION NAME
+                        Container(color: Colors.black.withOpacity(0.45)),
                         Center(
                           child: Text(
                             trip.destination,
-                            textAlign: TextAlign.center,
                             style: const TextStyle(
                               fontSize: 22,
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
                             ),
-                          ),
-                        ),
-
-                        // ➡ ARROW
-                        Positioned(
-                          right: 14,
-                          bottom: 14,
-                          child: Icon(
-                            Icons.arrow_forward_ios,
-                            color: Colors.white.withOpacity(0.9),
-                            size: 18,
                           ),
                         ),
                       ],
@@ -192,5 +168,3 @@ class TripsScreen extends StatelessWidget {
     );
   }
 }
-
-enum _TripType { planned, ongoing, past }

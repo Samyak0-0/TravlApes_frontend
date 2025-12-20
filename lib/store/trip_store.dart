@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/trip_model.dart';
+import '../models/destination_model.dart';
 
 class TripStore {
   static final TripStore _instance = TripStore._internal();
@@ -11,24 +12,28 @@ class TripStore {
   static const String _storageKey = "trips_storage";
 
   /// 🔔 Reactive trips list
-  final ValueNotifier<List<Trip>> tripsNotifier = ValueNotifier<List<Trip>>([]);
+  final ValueNotifier<List<Trip>> tripsNotifier =
+      ValueNotifier<List<Trip>>([]);
 
   List<Trip> get trips => tripsNotifier.value;
 
-  // 🔹 Load from storage
+  // --------------------------------------------------
+  // 🔹 LOAD FROM STORAGE
+  // --------------------------------------------------
   Future<void> loadTrips() async {
-    
     final prefs = await SharedPreferences.getInstance();
     final data = prefs.getString(_storageKey);
-    // await prefs.remove(_storageKey);
 
     if (data != null) {
       final List decoded = jsonDecode(data);
-      tripsNotifier.value = decoded.map((e) => Trip.fromJson(e)).toList();
+      tripsNotifier.value =
+          decoded.map((e) => Trip.fromJson(e)).toList();
     }
   }
 
-  // 🔹 Save to storage
+  // --------------------------------------------------
+  // 🔹 SAVE TO STORAGE
+  // --------------------------------------------------
   Future<void> _save() async {
     final prefs = await SharedPreferences.getInstance();
     final encoded = jsonEncode(
@@ -37,42 +42,46 @@ class TripStore {
     await prefs.setString(_storageKey, encoded);
   }
 
-  // 🔹 Add planned trip
-  Future<void> addPlannedTrip(String destination) async {
+  // --------------------------------------------------
+  // ✅ ADD PLANNED TRIP (FULL DATA)
+  // --------------------------------------------------
+  Future<void> addPlannedTrip({
+    required String destination,
+    required DateTime fromDate,
+    required DateTime toDate,
+    required List<Mood> moods,
+    required double budget,
+  }) async {
     tripsNotifier.value = [
       ...tripsNotifier.value,
-      Trip(destination: destination, status: TripStatus.planned),
-    ];
-    await _save();
-  }
-
-  Future<void> addOngoingTrip(String destination) async {
-    // Remove any existing trip with the same destination (planned or ongoing)
-    final filtered = tripsNotifier.value.where((t) => t.destination != destination).toList();
-
-    // Add the new ongoing trip
-    tripsNotifier.value = [
-      ...filtered,
-      Trip(destination: destination, status: TripStatus.ongoing),
+      Trip(
+        destination: destination,
+        status: TripStatus.planned,
+        fromDate: fromDate,
+        toDate: toDate,
+        moods: moods,
+        budget: budget,
+      ),
     ];
 
     await _save();
   }
 
-  // 🔹 Cancel planned trip
-  Future<void> cancelTrip(String destination) async {
-    tripsNotifier.value = tripsNotifier.value
-        .where((t) => t.destination != destination)
-        .toList();
-    await _save();
-  }
-
-  // 🔹 Planned → Ongoing
+  // --------------------------------------------------
+  // 🔹 PLANNED → ONGOING
+  // --------------------------------------------------
   Future<void> startTrip(String destination) async {
     tripsNotifier.value = tripsNotifier.value.map((trip) {
       if (trip.destination == destination &&
           trip.status == TripStatus.planned) {
-        return Trip(destination: trip.destination, status: TripStatus.ongoing);
+        return Trip(
+          destination: trip.destination,
+          status: TripStatus.ongoing,
+          fromDate: trip.fromDate,
+          toDate: trip.toDate,
+          moods: trip.moods,
+          budget: trip.budget,
+        );
       }
       return trip;
     }).toList();
@@ -80,12 +89,21 @@ class TripStore {
     await _save();
   }
 
-  // 🔹 Ongoing → Past  ✅ THIS FIXES YOUR ERROR
+  // --------------------------------------------------
+  // 🔹 ONGOING → PAST
+  // --------------------------------------------------
   Future<void> completeTrip(String destination) async {
     tripsNotifier.value = tripsNotifier.value.map((trip) {
       if (trip.destination == destination &&
           trip.status == TripStatus.ongoing) {
-        return Trip(destination: trip.destination, status: TripStatus.past);
+        return Trip(
+          destination: trip.destination,
+          status: TripStatus.past,
+          fromDate: trip.fromDate,
+          toDate: trip.toDate,
+          moods: trip.moods,
+          budget: trip.budget,
+        );
       }
       return trip;
     }).toList();
@@ -93,19 +111,20 @@ class TripStore {
     await _save();
   }
 
-  // Future<void> addOngoing(String destination) async {
-  //   tripsNotifier.value = tripsNotifier.value.map((trip) {
-  //     if (trip.destination == destination &&
-  //         trip.status == TripStatus.planned) {
-  //       return Trip(destination: trip.destination, status: TripStatus.ongoing);
-  //     }
-  //     return trip;
-  //   }).toList();
+  // --------------------------------------------------
+  // 🔹 CANCEL TRIP
+  // --------------------------------------------------
+  Future<void> cancelTrip(String destination) async {
+    tripsNotifier.value = tripsNotifier.value
+        .where((t) => t.destination != destination)
+        .toList();
 
-  //   await _save();
-  // }
+    await _save();
+  }
 
-  // 🔹 Getters
+  // --------------------------------------------------
+  // 🔹 GETTERS
+  // --------------------------------------------------
   List<Trip> get plannedTrips =>
       trips.where((t) => t.status == TripStatus.planned).toList();
 

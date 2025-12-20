@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'main_shell.dart';
 import '../store/trip_store.dart';
+import '../models/destination_model.dart';
+import 'planning_screen.dart';
 
 class PlanTripScreen extends StatefulWidget {
   final String destination;
@@ -20,7 +21,6 @@ class _PlanTripScreenState extends State<PlanTripScreen> {
 
   final TextEditingController budgetController = TextEditingController();
 
-  // ✅ BACKEND-COMPATIBLE MOODS ONLY
   final List<String> moods = [
     "Food",
     "Cultural",
@@ -35,32 +35,25 @@ class _PlanTripScreenState extends State<PlanTripScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Plan Trip"),
-      ),
+      appBar: AppBar(title: const Text("Plan Trip")),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 📅 FROM DATE
             _datePicker(
               label: "From Date",
               date: fromDate,
               onTap: () => _pickDate(isFrom: true),
             ),
             const SizedBox(height: 12),
-
-            // 📅 TO DATE
             _datePicker(
               label: "To Date",
               date: toDate,
               onTap: () => _pickDate(isFrom: false),
             ),
-
             const SizedBox(height: 24),
 
-            // 🎯 MOODS
             const Text(
               "What kind of trip do you want?",
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -69,8 +62,6 @@ class _PlanTripScreenState extends State<PlanTripScreen> {
             _moodChips(),
 
             const SizedBox(height: 24),
-
-            // 💰 BUDGET
             const Text(
               "Budget",
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -86,8 +77,6 @@ class _PlanTripScreenState extends State<PlanTripScreen> {
             ),
 
             const SizedBox(height: 40),
-
-            // ✅ COMPLETE BUTTON
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -99,10 +88,7 @@ class _PlanTripScreenState extends State<PlanTripScreen> {
                     borderRadius: BorderRadius.circular(16),
                   ),
                 ),
-                child: const Text(
-                  "Complete",
-                  style: TextStyle(fontSize: 16),
-                ),
+                child: const Text("Complete"),
               ),
             ),
           ],
@@ -111,7 +97,10 @@ class _PlanTripScreenState extends State<PlanTripScreen> {
     );
   }
 
-  // 🔹 DATE PICKER
+  // --------------------------------------------------
+  // HELPERS
+  // --------------------------------------------------
+
   Widget _datePicker({
     required String label,
     required DateTime? date,
@@ -140,7 +129,6 @@ class _PlanTripScreenState extends State<PlanTripScreen> {
     );
   }
 
-  // 🔹 MOOD CHIPS
   Widget _moodChips() {
     return Wrap(
       spacing: 8,
@@ -161,7 +149,6 @@ class _PlanTripScreenState extends State<PlanTripScreen> {
     );
   }
 
-  // 🔹 PICK DATE
   Future<void> _pickDate({required bool isFrom}) async {
     final picked = await showDatePicker(
       context: context,
@@ -177,17 +164,59 @@ class _PlanTripScreenState extends State<PlanTripScreen> {
     }
   }
 
-  // 🔹 COMPLETE ACTION
-  void _completeTrip() {
-    // (Later: send this to /places/recommend)
-    TripStore().addPlannedTrip(widget.destination);
+  List<Mood> _mapMoodsToEnum() {
+    return selectedMoods.map((m) {
+      switch (m) {
+        case 'Food':
+          return Mood.food;
+        case 'Cultural':
+          return Mood.cultural;
+        case 'Entertainment':
+          return Mood.entertainment;
+        case 'Peaceful':
+          return Mood.peaceful;
+        case 'Adventurous':
+          return Mood.adventurous;
+        case 'Nature':
+          return Mood.nature;
+        default:
+          throw Exception('Unknown mood');
+      }
+    }).toList();
+  }
 
-    Navigator.pushAndRemoveUntil(
+  void _completeTrip() async {
+    if (fromDate == null ||
+        toDate == null ||
+        selectedMoods.isEmpty ||
+        budgetController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please fill all fields")),
+      );
+      return;
+    }
+
+    final budget = double.tryParse(budgetController.text) ?? 0;
+
+    await TripStore().addPlannedTrip(
+      destination: widget.destination,
+      fromDate: fromDate!,
+      toDate: toDate!,
+      moods: _mapMoodsToEnum(),
+      budget: budget,
+    );
+
+    Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (_) => MainShell(initialIndex: 1),
+        builder: (_) => PlanningScreen(
+          destination: widget.destination,
+          fromDate: fromDate!,
+          toDate: toDate!,
+          moods: _mapMoodsToEnum(),
+          budget: budget,
+        ),
       ),
-      (route) => false,
     );
   }
 }
