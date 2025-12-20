@@ -1,18 +1,20 @@
 import 'package:flutter/material.dart';
-import 'plan_trip_screen.dart';
+import '../models/destination_model.dart';
 import '../store/favourite_store.dart';
+import 'plan_trip_screen.dart';
 
 class DestinationDetailsScreen extends StatelessWidget {
-  final String title;
+  final Destination destination;
 
   const DestinationDetailsScreen({
     super.key,
-    required this.title,
+    required this.destination,
   });
 
   @override
   Widget build(BuildContext context) {
-    final isFavourite = FavouriteStore().isFavourite(title);
+    final isFavourite =
+        FavouriteStore().isFavourite(destination.name);
 
     return Scaffold(
       body: Column(
@@ -31,13 +33,18 @@ class DestinationDetailsScreen extends StatelessWidget {
           height: 280,
           width: double.infinity,
           decoration: BoxDecoration(
-            color: Colors.blue.shade300,
+            color: Colors.green.shade300,
             borderRadius: const BorderRadius.only(
               bottomLeft: Radius.circular(30),
               bottomRight: Radius.circular(30),
             ),
           ),
-          // child: Image.network(des),
+          child: destination.imageUrl.isNotEmpty
+              ? Image.network(
+                  destination.imageUrl,
+                  fit: BoxFit.cover,
+                )
+              : null,
         ),
         Positioned(
           top: 40,
@@ -53,20 +60,21 @@ class DestinationDetailsScreen extends StatelessWidget {
         Positioned(
           bottom: 20,
           left: 16,
+          right: 16,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                title,
+                destination.name,
                 style: const TextStyle(
                   fontSize: 26,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
                 ),
               ),
-              const Text(
-                "Kaski District, Gandaki",
-                style: TextStyle(color: Colors.white70),
+              Text(
+                destination.location,
+                style: const TextStyle(color: Colors.white70),
               ),
             ],
           ),
@@ -83,16 +91,17 @@ class DestinationDetailsScreen extends StatelessWidget {
         children: [
           _infoBoxes(),
           const SizedBox(height: 20),
+
           const Text(
             "Description",
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
-          const Text(
-            "Ghandruk is a village development committee in the Kaski "
-            "District of the Gandaki Province of Nepal.",
-            style: TextStyle(color: Colors.grey),
+          Text(
+            destination.description,
+            style: const TextStyle(color: Colors.grey),
           ),
+
           const Spacer(),
           _bottomButtons(context, isFavourite),
         ],
@@ -103,10 +112,10 @@ class DestinationDetailsScreen extends StatelessWidget {
   Widget _infoBoxes() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: const [
-        _InfoBox(title: "Distance", value: "166 km"),
-        _InfoBox(title: "Time", value: "11 hr"),
-        _InfoBox(title: "Price", value: "\$485"),
+      children: [
+        _InfoBox(title: "Location", value: destination.location),
+        _InfoBox(title: "Rating", value: "⭐ ${destination.rating}"),
+        _InfoBox(title: "Category", value: destination.category),
       ],
     );
   }
@@ -118,14 +127,20 @@ class DestinationDetailsScreen extends StatelessWidget {
           child: OutlinedButton.icon(
             onPressed: () async {
               if (!isFavourite) {
-                await FavouriteStore().addFavourite(title);
+                await FavouriteStore()
+                    .addFavourite(destination.name);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text("$title added to favourites")),
+                  SnackBar(
+                    content: Text(
+                        "${destination.name} added to favourites"),
+                  ),
                 );
               }
             },
             icon: Icon(
-              isFavourite ? Icons.favorite : Icons.favorite_border,
+              isFavourite
+                  ? Icons.favorite
+                  : Icons.favorite_border,
               color: isFavourite ? Colors.red : null,
             ),
             label: const Text("Favourite"),
@@ -138,7 +153,8 @@ class DestinationDetailsScreen extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => PlanTripScreen(destination: title),
+                  builder: (_) =>
+                      PlanTripScreen(destination: destination.name),
                 ),
               );
             },
@@ -163,16 +179,20 @@ class _InfoBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 100,
-      padding: const EdgeInsets.symmetric(vertical: 12),
+      width: 110,
+      padding: const EdgeInsets.symmetric(vertical: 14),
       decoration: BoxDecoration(
         color: Colors.green.shade50,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
         children: [
-          Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 4),
+          Text(
+            value,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 6),
           Text(title, style: const TextStyle(color: Colors.grey)),
         ],
       ),

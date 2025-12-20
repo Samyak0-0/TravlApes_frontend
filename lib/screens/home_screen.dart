@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/destination_model.dart';
+import '../models/location_model.dart';
 import '../services/destination_service.dart';
 import 'destination_details_screen.dart';
 
@@ -13,10 +14,45 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final DestinationService _service = DestinationService();
   final TextEditingController _searchController = TextEditingController();
+
   List<Destination> destinations = [];
   List<Destination> filteredDestinations = [];
+
   bool isLoading = true;
   bool isSearching = false;
+  String? selectedLocation;
+
+  // 📍 LOCATIONS (MODEL UNCHANGED)
+  final List<LocationItem> locations = const [
+    LocationItem(
+      name: "Kathmandu",
+      imageUrl:
+          "https://images.unsplash.com/photo-1580744083053-59bfa5b2d5c6",
+    ),
+    LocationItem(
+      name: "Bhaktapur",
+      imageUrl:
+          "https://images.unsplash.com/photo-1601268570936-9cb62b74b5c6",
+    ),
+    LocationItem(
+      name: "Lalitpur, Patan",
+      imageUrl:
+          "https://images.unsplash.com/photo-1605000797499-95a51c5269ae",
+    ),
+    LocationItem(
+      name: "Pokhara",
+      imageUrl:
+          "https://images.unsplash.com/photo-1590123710436-4216b5b8c72d",
+    ),
+  ];
+
+  // 📝 HARD-CODED LOCATION DESCRIPTIONS
+  final Map<String, String> locationDescriptions = const {
+    "Kathmandu": "Capital city rich in temples, culture & history",
+    "Bhaktapur": "Ancient city famous for heritage & architecture",
+    "Lalitpur, Patan": "Artistic city with monasteries & craftsmanship",
+    "Pokhara": "Lakeside city with mountains & adventure",
+  };
 
   @override
   void initState() {
@@ -27,71 +63,32 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
-    _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     super.dispose();
   }
 
   void _onSearchChanged() {
+    final query = _searchController.text.toLowerCase();
+
     setState(() {
-      if (_searchController.text.isEmpty) {
-        filteredDestinations = destinations;
-      } else {
-        final query = _searchController.text.toLowerCase();
-        
-        // Separate matches by priority with scoring
-        final exactTitleMatches = <Destination>[];
-        final startsWithMatches = <Destination>[];
-        final titleContainsMatches = <Destination>[];
-        final otherMatches = <Destination>[];
-        
-        for (var dest in destinations) {
-          final nameLower = dest.name.toLowerCase();
-          
-          if (nameLower == query) {
-            // Exact match has highest priority
-            exactTitleMatches.add(dest);
-          } else if (nameLower.startsWith(query)) {
-            // Starts with query has second priority
-            startsWithMatches.add(dest);
-          } else if (nameLower.contains(query)) {
-            // Contains in title has third priority
-            titleContainsMatches.add(dest);
-          } else if (dest.description.toLowerCase().contains(query) ||
-              dest.category.toLowerCase().contains(query)) {
-            // Description/category matches last
-            otherMatches.add(dest);
-          }
-        }
-        
-        // Combine in priority order
-        filteredDestinations = [
-          ...exactTitleMatches,
-          ...startsWithMatches,
-          ...titleContainsMatches,
-          ...otherMatches
-        ];
-      }
+      filteredDestinations = destinations.where((dest) {
+        return dest.name.toLowerCase().contains(query) ||
+            dest.description.toLowerCase().contains(query) ||
+            dest.category.toLowerCase().contains(query);
+      }).toList();
     });
   }
 
   Future<void> _loadDestinations() async {
     try {
       final data = await _service.fetchDestinations();
-
-      // 🔎 DEBUG (remove later)
-      debugPrint("DESTINATIONS LOADED: ${data.length}");
-      for (var d in data) {
-        debugPrint("${d.name} → ${d.description}");
-      }
-
       setState(() {
         destinations = data;
         filteredDestinations = data;
         isLoading = false;
       });
     } catch (e) {
-      debugPrint("ERROR FETCHING DESTINATIONS: $e");
+      debugPrint("ERROR: $e");
       setState(() => isLoading = false);
     }
   }
@@ -115,18 +112,20 @@ class _HomeScreenState extends State<HomeScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _header(),
+
             if (isSearching) ...[
               const SizedBox(height: 16),
               _searchBar(),
             ],
+
             const SizedBox(height: 20),
+
             if (!isSearching) ...[
-              _categories(),
-              const SizedBox(height: 20),
-              _featuredBoxes(context),
-              const SizedBox(height: 30),
+              _locationSection(),
+              const SizedBox(height: 28),
             ],
-            _sectionTitle(isSearching ? "Search Results" : "Top Destinations"),
+
+            _sectionTitle("Top Destinations"),
             const SizedBox(height: 12),
             _topDestinationBoxes(context),
           ],
@@ -135,7 +134,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // 🔹 Header
+  // 🔹 HEADER
   Widget _header() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -145,14 +144,14 @@ class _HomeScreenState extends State<HomeScreen> {
           style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
         ),
         IconButton(
-          icon: Icon(isSearching ? Icons.close : Icons.search, size: 26),
+          icon: Icon(isSearching ? Icons.close : Icons.search),
           onPressed: _toggleSearch,
         ),
       ],
     );
   }
 
-  // 🔹 Search Bar
+  // 🔹 SEARCH BAR
   Widget _searchBar() {
     return Container(
       decoration: BoxDecoration(
@@ -162,135 +161,116 @@ class _HomeScreenState extends State<HomeScreen> {
       child: TextField(
         controller: _searchController,
         autofocus: true,
-        decoration: InputDecoration(
+        decoration: const InputDecoration(
           hintText: "Search destinations...",
-          prefixIcon: const Icon(Icons.search),
-          suffixIcon: _searchController.text.isNotEmpty
-              ? IconButton(
-                  icon: const Icon(Icons.clear),
-                  onPressed: () {
-                    _searchController.clear();
-                  },
-                )
-              : null,
+          prefixIcon: Icon(Icons.search),
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 14,
-          ),
+          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         ),
       ),
     );
   }
 
-  // 🔹 Categories (static for now)
-  Widget _categories() {
-    final categories = ["Mountain", "Jungle", "Water", "Beach"];
+  // 📍 LOCATION SECTION WITH DESCRIPTIONS
+  Widget _locationSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _sectionTitle("Explore by Location"),
+        const SizedBox(height: 14),
 
-    return SizedBox(
-      height: 40,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: categories.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 20),
-        itemBuilder: (context, index) {
-          return Text(
-            categories[index],
-            style: TextStyle(
-              fontWeight: index == 0 ? FontWeight.bold : FontWeight.normal,
-              color: index == 0 ? Colors.black : Colors.grey,
-            ),
-          );
-        },
-      ),
-    );
-  }
+        SizedBox(
+          height: 190, // ⬆ increased height
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: locations.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 18),
+            itemBuilder: (context, index) {
+              final location = locations[index];
+              final isSelected = selectedLocation == location.name;
 
-  // 🔹 Featured (Top 2 destinations)
-  Widget _featuredBoxes(BuildContext context) {
-    if (isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
+              return GestureDetector(
+                onTap: () {
+                  setState(() {
+                    selectedLocation =
+                        isSelected ? null : location.name;
+                  });
+                },
+                child: Container(
+                  width: 180, // ⬆ increased width
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(22),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.12),
+                        blurRadius: 12,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(22),
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        // 🖼 Location image
+                        Image.network(
+                          location.imageUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) =>
+                              Container(color: Colors.green.shade200),
+                        ),
 
-    final featured = destinations.take(2).toList();
+                        // 🌫 Dark overlay
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          color: isSelected
+                              ? Colors.black.withOpacity(0.6)
+                              : Colors.black.withOpacity(0.4),
+                        ),
 
-    return SizedBox(
-      height: 260,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: featured.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 16),
-        itemBuilder: (context, index) {
-          final dest = featured[index];
-          return GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => DestinationDetailsScreen(
-                    title: dest.name,
+                        // 📍 Text content
+                        Padding(
+                          padding: const EdgeInsets.all(14),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                location.name,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 17, // ⬆ bigger
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                locationDescriptions[location.name] ?? "",
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 13, // ⬆ bigger
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               );
             },
-            child: SizedBox(
-              width: 200,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(20),
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    // background image or fallback color
-                    if (dest.imageUrl.isNotEmpty)
-                      Image.network(
-                        dest.imageUrl,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stack) => Container(color: Colors.green.shade100),
-                        loadingBuilder: (context, child, progress) {
-                          if (progress == null) return child;
-                          return Container(color: Colors.green.shade100);
-                        },
-                      )
-                    else
-                      Container(color: Colors.green.shade100),
-
-                    // subtle overlay for legibility
-                    Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.bottomCenter,
-                          end: Alignment.topCenter,
-                          colors: [Colors.black.withOpacity(0.35), Colors.transparent],
-                        ),
-                      ),
-                    ),
-
-                    Align(
-                      alignment: Alignment.bottomLeft,
-                      child: Container(
-                        margin: const EdgeInsets.all(12),
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          dest.name,
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        },
-      ),
+          ),
+        ),
+      ],
     );
   }
 
-  // 🔹 Section title
+
+  // 🔹 SECTION TITLE
   Widget _sectionTitle(String title) {
     return Text(
       title,
@@ -301,59 +281,51 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // 🔹 Top destinations list (NAME + DESCRIPTION FIXED)
+  // 🔹 TOP DESTINATIONS
   Widget _topDestinationBoxes(BuildContext context) {
     if (isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    // ❌ Categories to exclude
     final excludedCategories = [
       'restaurant',
       'food',
       'accomodations',
     ];
 
-    // ✅ Use filtered destinations when searching, otherwise use all
-    final destinationsToShow = isSearching ? filteredDestinations : destinations;
+    final sourceList = isSearching ? filteredDestinations : destinations;
 
-    // ✅ Filter + sort
-    final topDestinations = destinationsToShow
-        .where((dest) =>
-            !excludedCategories.contains(dest.category.toLowerCase()))
-        .toList();
+    final filtered = sourceList.where((dest) {
+      if (excludedCategories.contains(dest.category.toLowerCase())) {
+        return false;
+      }
 
-    if (!isSearching) {
-      topDestinations.sort((a, b) => b.rating.compareTo(a.rating));
-    }
+      if (selectedLocation != null &&
+          dest.location.toLowerCase() !=
+              selectedLocation!.toLowerCase()) {
+        return false;
+      }
 
-    if (topDestinations.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Text(
-            isSearching
-                ? "No destinations found matching '${_searchController.text}'"
-                : "No destinations available",
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: Colors.grey),
-          ),
-        ),
+      return true;
+    }).toList()
+      ..sort((a, b) => b.rating.compareTo(a.rating));
+
+    if (filtered.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.all(20),
+        child: Center(child: Text("No destinations found")),
       );
     }
 
-    final displayCount = isSearching ? topDestinations.length : 5;
-
     return Column(
-      children: topDestinations.take(displayCount).map((dest) {
+      children: filtered.take(5).map((dest) {
         return GestureDetector(
           onTap: () {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (_) => DestinationDetailsScreen(
-                  title: dest.name,
-                ),
+                builder: (_) =>
+                    DestinationDetailsScreen(destination: dest),
               ),
             );
           },
@@ -366,20 +338,17 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             child: Row(
               children: [
-                Container(
-                  width: 50,
-                  height: 50,
-                  clipBehavior: Clip.hardEdge,
-                  
-                  decoration: BoxDecoration(
-                    color: Colors.red.shade200,
-                    borderRadius: BorderRadius.circular(10),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: Image.network(
+                    dest.imageUrl,
+                    width: 50,
+                    height: 50,
+                    fit: BoxFit.cover,
                   ),
-                  child: Image.network(dest.imageUrl, fit: BoxFit.cover,),
                 ),
                 const SizedBox(width: 12),
 
-                // 📌 Name + description
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -396,13 +365,13 @@ class _HomeScreenState extends State<HomeScreen> {
                         dest.description,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(color: Colors.black54),
+                        style:
+                            const TextStyle(color: Colors.black54),
                       ),
                     ],
                   ),
                 ),
 
-                const SizedBox(width: 8),
                 Text("⭐ ${dest.rating}"),
               ],
             ),

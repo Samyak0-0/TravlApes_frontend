@@ -36,12 +36,9 @@ class FavouritesScreen extends StatelessWidget {
 
                   // ✅ TAP TO OPEN DETAILS
                   onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => DestinationDetailsScreen(
-                          title: fav.destination,
-                        ),
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Open from Home screen for full details"),
                       ),
                     );
                   },
