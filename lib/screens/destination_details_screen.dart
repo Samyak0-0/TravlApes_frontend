@@ -45,9 +45,9 @@ class _DestinationDetailsScreenState
         Container(
           height: 280,
           width: double.infinity,
-          decoration: BoxDecoration(
-            color: Colors.green.shade300,
-            borderRadius: const BorderRadius.only(
+          decoration: const BoxDecoration(
+            color: Colors.black12,
+            borderRadius: BorderRadius.only(
               bottomLeft: Radius.circular(30),
               bottomRight: Radius.circular(30),
             ),
@@ -73,7 +73,7 @@ class _DestinationDetailsScreenState
           ),
         ),
 
-        // ❤️ FAVOURITE BUTTON (BOTTOM RIGHT ON IMAGE)
+        // ❤️ FAVOURITE BUTTON
         Positioned(
           bottom: 20,
           right: 16,
@@ -107,7 +107,7 @@ class _DestinationDetailsScreenState
         Positioned(
           bottom: 20,
           left: 16,
-          right: 70, // space for heart icon
+          right: 70,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -145,16 +145,21 @@ class _DestinationDetailsScreenState
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
+
           Text(
             widget.destination.description,
-            style: const TextStyle(color: Colors.grey),
+            style: const TextStyle(
+              color: Colors.grey,
+              fontSize: 15,
+              height: 1.5,
+            ),
           ),
         ],
       ),
     );
   }
 
-  // ℹ️ INFO BOXES
+  // ℹ️ INFO BOXES (GREY THEME)
   Widget _infoBoxes() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -201,7 +206,7 @@ class _DestinationDetailsScreenState
   }
 }
 
-// 🔲 INFO BOX WIDGET
+// 🔲 INFO BOX WIDGET (UPDATED – GREY)
 class _InfoBox extends StatelessWidget {
   final String title;
   final String value;
@@ -215,22 +220,31 @@ class _InfoBox extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: 110,
-      padding: const EdgeInsets.symmetric(vertical: 14),
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
       decoration: BoxDecoration(
-        color: Colors.green.shade50,
+        color: Colors.grey.shade100,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Colors.grey.shade300,
+        ),
       ),
       child: Column(
         children: [
           Text(
             value,
             textAlign: TextAlign.center,
-            style: const TextStyle(fontWeight: FontWeight.bold),
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
           ),
           const SizedBox(height: 6),
           Text(
             title,
-            style: const TextStyle(color: Colors.grey),
+            style: const TextStyle(
+              color: Colors.grey,
+              fontSize: 13,
+            ),
           ),
         ],
       ),
