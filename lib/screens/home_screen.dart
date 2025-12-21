@@ -59,10 +59,10 @@ class _HomeScreenState extends State<HomeScreen>
   ];
 
   final Map<String, String> locationDescriptions = const {
-    "Kathmandu": "Capital city rich in temples, culture & history",
-    "Bhaktapur": "Ancient city famous for heritage & architecture",
-    "Lalitpur": "Artistic city with monasteries & craftsmanship",
-    "Pokhara": "Lakeside city with mountains & adventure",
+    "Kathmandu": "Kathmandu is a vibrant tapestry of history, spirituality, and everyday life woven into a single, unforgettable city. Ancient temples and palace squares stand alongside busy streets filled with markets, cafés, and constant motion, creating a rhythm that feels chaotic yet deeply alive. Prayer flags flutter above narrow alleys, incense drifts through the air, and traditions centuries old continue as part of daily routine. More than just Nepal’s capital, Kathmandu is an experience—rich, layered, and full of stories that reveal themselves the more time you spend within its embrace.",
+    "Bhaktapur": "Bhaktapur is a living museum where history feels carefully protected rather than forgotten. Its brick-paved squares, intricately carved wooden windows, and sacred temples create an atmosphere that moves at a gentle, timeless pace. Daily life unfolds among ancient courtyards, pottery workshops, and quiet rituals, giving the city a deeply authentic charm that invites visitors to slow down and truly observe.",
+    "Lalitpur": "Lalitpur is a city shaped by artistry and devotion, where beauty lives in fine details and balanced design. Graceful temples, serene courtyards, and masterful metal and stonework reflect centuries of craftsmanship and cultural pride. With its calm streets and creative spirit, Patan offers a refined, soulful experience where tradition and everyday life blend seamlessly",
+    "Pokhara": "Lakeside city with mountains & adventurePokhara is a place of open skies and quiet reflection, where lakes shimmer beneath towering Himalayan peaks. The city feels peaceful yet alive, balancing natural serenity with moments of adventure. Whether watching mountains mirrored in still waters or enjoying the relaxed lakeside atmosphere, Pokhara encourages you to breathe deeper, slow down, and reconnect with nature.",
   };
 
   @override
